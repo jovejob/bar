@@ -45,22 +45,32 @@ class BarTenderController extends Controller
         $drinkQueue = Cache::get('drink_queue', []);
 
         if ($drinkType === 'BEER') {
-            $beerCount = count(array_filter($drinkQueue, function ($order) {
-                return $order === 'BEER';
-            }));
-
-            return $beerCount < $this->maxBeers;
+            return $this->isBeerOrderAccepted($drinkQueue);
         }
 
         if ($drinkType === 'DRINK') {
-            $drinkCount = count(array_filter($drinkQueue, function ($order) {
-                return $order === 'DRINK';
-            }));
-
-            return $drinkCount < $this->maxDrinks;
+            return $this->isDrinkOrderAccepted($drinkQueue);
         }
 
         return false;
+    }
+
+    private function isBeerOrderAccepted($drinkQueue)
+    {
+        $beerCount = count(array_filter($drinkQueue, function ($order) {
+            return $order === 'BEER';
+        }));
+
+        return $beerCount < $this->maxBeers;
+    }
+
+    private function isDrinkOrderAccepted($drinkQueue)
+    {
+        $drinkCount = count(array_filter($drinkQueue, function ($order) {
+            return $order === 'DRINK';
+        }));
+
+        return $drinkCount < $this->maxDrinks;
     }
 
     private function serveDrink($customerNumber, $drinkType, $orderIdentifier)
