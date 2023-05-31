@@ -5,23 +5,28 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class BarTenderController extends Controller
 {
-
-    // Move these to a class/config maybe - to have more flexibility
-    private $drinkQueue = []; // Track the drink orders
-    private $maxBeers = 2; // Maximum number of beers the barman can prepare at once
-    private $maxDrinks = 1; // Maximum number of drinks the barman can prepare at once
-    private $drinkPreparationTime = 5; // Default drink preparation time in seconds
+    private $maxBeers = 2;
+    private $maxDrinks = 1;
+    private $drinkPreparationTime = 5;
 
     public function orderDrink(Request $request)
     {
         $customerNumber = $request->input('customer_number');
         $drinkType = $request->input('drink_type');
+        $orderIdentifier = $request->header('Order-Identifier');
+
+        // Check if the order has already been served
+        if ($this->isOrderServed($orderIdentifier)) {
+            return response('Order has already been served', Response::HTTP_OK);
+        }
 
         if ($this->isOrderAccepted($drinkType)) {
-            $this->serveDrink($customerNumber, $drinkType);
+            $this->serveDrink($customerNumber, $drinkType, $orderIdentifier);
             return response('Drink will be served', Response::HTTP_OK);
         } else {
             return response('Order not accepted at the moment', Response::HTTP_TOO_MANY_REQUESTS);
@@ -56,13 +61,21 @@ class BarTenderController extends Controller
         return false;
     }
 
-    private function serveDrink($customerNumber, $drinkType)
+    private function serveDrink($customerNumber, $drinkType, $orderIdentifier)
     {
         $drinkQueue = Cache::get('drink_queue', []);
         array_push($drinkQueue, $drinkType);
         Cache::put('drink_queue', $drinkQueue);
 
+        // Mark the order as served using the order identifier
+        Cache::put('served_orders:' . $orderIdentifier, true);
+
         // Simulate drink preparation time
         sleep($this->drinkPreparationTime);
+    }
+
+    private function isOrderServed($orderIdentifier)
+    {
+        return Cache::has('served_orders:' . $orderIdentifier);
     }
 }
