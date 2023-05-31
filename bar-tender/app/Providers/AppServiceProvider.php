@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Services\Contracts\DrinkStorageInterface;
+use App\Services\Implementations\CacheDrinkStorage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->bind(DrinkStorageInterface::class, CacheDrinkStorage::class);
     }
 
     /**

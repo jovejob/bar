@@ -2,35 +2,59 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
+use App\Services\Contracts\DrinkStorageInterface;
 
 class BarTenderService
 {
+    // todo move them further to a config file or DB or whatever mechanism we think its better
     private $drinkQueue = [];
     private $maxBeers = 2;
     private $maxDrinks = 1;
     private $drinkPreparationTime = 5;
+    private $drinkStorage;
+
+    public function __construct(DrinkStorageInterface $drinkStorage)
+    {
+        $this->drinkStorage = $drinkStorage;
+        $this->drinkQueue = $this->drinkStorage->getDrinkQueue();
+    }
 
     public function isOrderAccepted($drinkType)
     {
-        $drinkQueue = $this->getDrinkQueue();
-
+        // todo switch case for more options and flexibility
         if ($drinkType === 'BEER') {
-            return $this->isBeerOrderAccepted($drinkQueue);
+            return $this->isBeerOrderAccepted();
         }
 
         if ($drinkType === 'DRINK') {
-            return $this->isDrinkOrderAccepted($drinkQueue);
+            return $this->isDrinkOrderAccepted();
         }
 
         return false;
     }
 
+    private function isBeerOrderAccepted()
+    {
+        $beerCount = count(array_filter($this->drinkQueue, function ($order) {
+            return $order === 'BEER';
+        }));
+
+        return $beerCount < $this->maxBeers;
+    }
+
+    private function isDrinkOrderAccepted()
+    {
+        $drinkCount = count(array_filter($this->drinkQueue, function ($order) {
+            return $order === 'DRINK';
+        }));
+
+        return $drinkCount < $this->maxDrinks;
+    }
+
     public function serveDrink($customerNumber, $drinkType)
     {
-        $drinkQueue = $this->getDrinkQueue();
-        array_push($drinkQueue, $drinkType);
-        $this->setDrinkQueue($drinkQueue);
+        array_push($this->drinkQueue, $drinkType);
+        $this->drinkStorage->setDrinkQueue($this->drinkQueue);
 
         // Simulate drink preparation time
         sleep($this->drinkPreparationTime);
@@ -38,29 +62,6 @@ class BarTenderService
 
     public function getDrinkQueue()
     {
-        return Cache::get('drink_queue', []);
-    }
-
-    public function setDrinkQueue($drinkQueue)
-    {
-        Cache::put('drink_queue', $drinkQueue);
-    }
-
-    private function isBeerOrderAccepted($drinkQueue)
-    {
-        $beerCount = count(array_filter($drinkQueue, function ($order) {
-            return $order === 'BEER';
-        }));
-
-        return $beerCount < $this->maxBeers;
-    }
-
-    private function isDrinkOrderAccepted($drinkQueue)
-    {
-        $drinkCount = count(array_filter($drinkQueue, function ($order) {
-            return $order === 'DRINK';
-        }));
-
-        return $drinkCount < $this->maxDrinks;
+        return $this->drinkQueue;
     }
 }
