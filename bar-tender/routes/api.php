@@ -15,10 +15,5 @@ use App\Http\Controllers\BarTenderController;
 |
 */
 
-// todo remove middleware
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::post('/order', [BarTenderController::class, 'orderDrink']);
 Route::get('/orders', [BarTenderController::class, 'listOrders']);
