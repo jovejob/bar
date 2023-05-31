@@ -50,7 +50,9 @@ class BarTenderController extends Controller
             }));
 
             return $beerCount < $this->maxBeers;
-        } elseif ($drinkType === 'DRINK') {
+        }
+
+        if ($drinkType === 'DRINK') {
             $drinkCount = count(array_filter($drinkQueue, function ($order) {
                 return $order === 'DRINK';
             }));
